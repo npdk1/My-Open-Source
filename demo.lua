@@ -43,6 +43,7 @@ spawn(function()
     while true do
         local currentLevel = game:GetService("Players").LocalPlayer.PlayerStats.lvl.Value
         LevelLabel.Text = "Current Level: " .. tostring(currentLevel)
+        TargetLabel.Text = "Target Level: " .. tostring(getgenv().TargetLevel) -- TargetLevel giữ nguyên
         wait(1)
     end
 end)
