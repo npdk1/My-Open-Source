@@ -7,18 +7,9 @@ print("|| ✅   SCRIPT MADE BY NPDK  ✅      ||")
 print("|| 💸  HAVE A NICE DAY WITH MY SCRIPT!  💸 ||")
 print("=====================================")
 
--- Tải script từ GitHub với getgenv và loadstring
+-- Cấu hình
 getgenv().TargetLevel = 100 -- Cấp độ mục tiêu
 getgenv().Delay = 1 -- Thời gian chờ giữa các lần kiểm tra (tính bằng giây)
-
--- Tự động tăng TargetLevel theo thời gian
-spawn(function()
-    while true do
-        wait(60) -- Thời gian tăng cấp độ mục tiêu (tính bằng giây)
-        getgenv().TargetLevel = getgenv().TargetLevel + 10 -- Tăng 10 cấp mỗi phút
-        print("[Thông báo] Cấp độ mục tiêu mới: " .. getgenv().TargetLevel)
-    end
-end)
 
 -- Hàm tạo bảng hiển thị giữa màn hình
 local function createDisplay()
@@ -52,8 +43,6 @@ spawn(function()
     while true do
         local currentLevel = game:GetService("Players").LocalPlayer.PlayerStats.lvl.Value
         LevelLabel.Text = "Current Level: " .. tostring(currentLevel)
-        TargetLabel.Text = "Target Level: " .. tostring(getgenv().TargetLevel)
         wait(1)
     end
 end)
-
