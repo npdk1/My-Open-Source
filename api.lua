@@ -1,75 +1,17 @@
--- =====================================
--- || SCRIPT MADE BY NPDK             ||
--- =====================================
+-- Cấu hình Key và các thông số cần thiết
+getgenv().Key = "KTOOLS-D15XJ-YGSRB-07EY8" -- Key của người dùng
+getgenv().TargetLevel = 1 -- Mục tiêu cấp độ
+getgenv().Delay = 5 -- Thời gian chờ giữa các lần kiểm tra (giây)
 
-print("=====================================")
-print("|| ✅   SCRIPT MADE BY NPDK  ✅      ||")
-print("|| 💸  HAVE A NICE DAY WITH MY SCRIPT!  💸 ||")
-print("=====================================")
-
-
--- URL của script (đảm bảo URL tồn tại)
-local script_url = "https://raw.githubusercontent.com/npdk1/My-Product/main/Grand%20Piece%20Online%20Roblox/api.lua"
-
--- Lấy HWID của thiết bị
+-- Lấy HWID
 local http = game:GetService("HttpService")
 local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
 
--- API URL từ Flask Server (cập nhật với địa chỉ IP server của bạn)
-local api_url = "http://127.0.0.1:5000/update_hwid"
+-- In ra HWID để kiểm tra
+print("🔑 HWID của bạn: " .. hwid)
 
--- Gửi HWID và key đến API để xác thực
-local function validateKey(key, hwid)
-    local payload = http:JSONEncode({key = key, hwid = hwid})
-    local success, response = pcall(function()
-        return http:PostAsync(api_url, payload, Enum.HttpContentType.ApplicationJson)
-    end)
-
-    if success then
-        local result = http:JSONDecode(response)
-        if result.status == "success" then
-            print("✅ Key hợp lệ và HWID đã được xác thực!")
-            return true
-        else
-            print("❌ Lỗi: " .. result.message)
-            return false
-        end
-    else
-        print("❌ Không thể kết nối đến API. Chi tiết lỗi: " .. tostring(response))
-        return false
-    end
-end
-
--- Kiểm tra key trước khi chạy script
-if not validateKey(getgenv().Key, hwid) then
-    print("❌ Key không hợp lệ hoặc HWID không khớp. Vui lòng kiểm tra lại!")
-    return -- Dừng script nếu key không hợp lệ
-end
-
--- Hàm tải script từ URL và thực thi
-local function loadScriptFromURL(url)
-    print("🔄 Đang tải script từ URL: " .. url)
-    local success, result = pcall(function()
-        return game:HttpGet(url, true)
-    end)
-
-    if success then
-        print("✅ Tải script thành công từ URL!")
-        local loadSuccess, loadError = pcall(function()
-            loadstring(result)()
-        end)
-
-        if not loadSuccess then
-            print("❌ Lỗi khi thực thi script: " .. tostring(loadError))
-        end
-    else
-        print("❌ Không thể tải script từ URL. Đảm bảo rằng URL tồn tại và có thể truy cập được.")
-        print("Chi tiết lỗi: " .. tostring(result))
-    end
-end
-
--- Gọi hàm để tải và thực thi script
-loadScriptFromURL(script_url)
+-- Thông báo lỗi nếu HWID không được gửi đến API
+print("⚠️ Vui lòng đảm bảo rằng bạn đã sử dụng đúng công cụ hỗ trợ API để gửi HWID.")
 
 -- Biến cờ để kiểm tra xem file đã được tạo chưa
 local fileCreated = false
