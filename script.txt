@@ -2,4 +2,4 @@
 getgenv().TargetLevel = 1 -- Đặt target level mặc định 
 getgenv().Delay = 5 -- Thời gian chờ giữa các lần kiểm tra (giây)
 -- Tải và thực thi script từ URL raw GitHub
-loadstring(game:HttpGet("https://raw.githubusercontent.com/npdk1/My-Obfuscate-Product/refs/heads/main/Grand%20Piece%20Online%20Script/YummyGPOSwitchAcc.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/npdk1/My-Open-Source/refs/heads/main/YummyGPOSwitchAcc.lua"))()
