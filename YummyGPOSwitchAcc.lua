@@ -12,15 +12,32 @@ local Players = game:GetService("Players")
 local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 local fileCreated = false
 
--- Cấu hình máy chủ Flask (sử dụng IP công cộng)
-local flaskServerURL = "http://171.226.231.220:5000/receive_data"  -- Địa chỉ IP công cộng và cổng Flask
-local apiKey = "your_secure_api_key"  -- Thay đổi thành API key an toàn của bạn
+-- =======================
+-- Cấu Hình
+-- =======================
+local config = {
+    flaskServerURL = "http://171.226.231.220:5000/receive_data",  -- Địa chỉ IP công cộng và cổng Flask
+    apiKey = "KTOOLS-A5AKF-HIQ8F-DTPS4",  -- API Key hợp lệ từ key_database.json
+    targetLevel = 10,  -- Level mục tiêu
+    delayTime = 5  -- Thời gian delay giữa các lần kiểm tra (giây)
+}
 
--- Thiết lập Level mục tiêu và Delay
-local targetLevel = 10  -- Level mục tiêu
-local delayTime = 5  -- Thời gian delay giữa các lần kiểm tra (giây)
+-- =======================
+-- Hàm Lấy HWID (Hardware ID)
+-- =======================
+local function getHWID()
+    -- Cách lấy HWID tùy thuộc vào môi trường mà bạn đang sử dụng.
+    -- Trong Roblox thông thường, không thể lấy HWID vì lý do bảo mật.
+    -- Bạn có thể cần sử dụng một dịch vụ bên ngoài hoặc exploit để lấy HWID.
+    -- Dưới đây là một ví dụ giả định:
+    
+    local hwid = "EXAMPLE-HWID-1234-5678"  -- Thay thế bằng cách lấy HWID thực tế
+    return hwid
+end
 
--- Hàm lấy Level hiện tại của người chơi
+-- =======================
+-- Hàm Lấy Level Hiện Tại Của Người Chơi
+-- =======================
 local function getCurrentLevel()
     local player = Players.LocalPlayer
     if not player then
@@ -53,7 +70,9 @@ local function getCurrentLevel()
     end
 end
 
--- Hàm tạo file
+-- =======================
+-- Hàm Tạo File (Chỉ hoạt động trong môi trường exploit hoặc sử dụng dịch vụ bên ngoài)
+-- =======================
 local function createFile(playerName)
     local fileName = playerName .. ".txt"
     local fileContent = "Yummytool"
@@ -69,20 +88,23 @@ local function createFile(playerName)
     end
 end
 
--- Hàm gửi dữ liệu tới Flask API sử dụng POST
-local function sendToFlaskApi(playerName, level)
+-- =======================
+-- Hàm Gửi Dữ Liệu Tới Flask API Sử Dụng POST
+-- =======================
+local function sendToFlaskApi(playerName, level, hwid)
     local machineId = RbxAnalyticsService:GetClientId()
     local data = {
+        key = config.apiKey,
+        hwid = hwid,
         playerName = playerName,
         currentLevel = level,
-        machineId = machineId,
-        apiKey = apiKey
+        machineId = machineId
     }
 
     local jsonData = HttpService:JSONEncode(data)
 
     local success, response = pcall(function()
-        return HttpService:PostAsync(flaskServerURL, jsonData, Enum.HttpContentType.ApplicationJson)
+        return HttpService:PostAsync(config.flaskServerURL, jsonData, Enum.HttpContentType.ApplicationJson)
     end)
 
     if success then
@@ -92,24 +114,29 @@ local function sendToFlaskApi(playerName, level)
     end
 end
 
--- Hàm kiểm tra Level và gửi dữ liệu tới Flask API
-local function checkLevel()
+-- =======================
+-- Hàm Kiểm Tra Key và Level
+-- =======================
+local function checkKeyAndLevel()
     local currentLevel = getCurrentLevel()
     print("[Info] Current Level: " .. currentLevel)
     
-    if currentLevel >= targetLevel then
+    if currentLevel >= config.targetLevel then
         print("[Info] Đã đạt Level mục tiêu: " .. currentLevel)
         local playerName = Players.LocalPlayer.Name
+        local hwid = getHWID()
         createFile(playerName)
-        sendToFlaskApi(playerName, currentLevel)
+        sendToFlaskApi(playerName, currentLevel, hwid)
         fileCreated = true -- Dừng kiểm tra thêm
     else
         print("[Info] Chưa đạt Level mục tiêu. Current: " .. currentLevel)
     end
 end
 
--- Vòng lặp kiểm tra Level liên tục
+-- =======================
+-- Vòng Lặp Kiểm Tra Key và Level Liên Tục
+-- =======================
 while not fileCreated do
-    checkLevel()
-    wait(delayTime)
+    checkKeyAndLevel()
+    wait(config.delayTime)
 end
