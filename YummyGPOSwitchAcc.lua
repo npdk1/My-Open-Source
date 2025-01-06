@@ -52,27 +52,17 @@ local function createFile(playerName)
     end
 end
 
--- Function to send HTTP request to Flask API
+-- Function to send HTTP request to Flask API using game:HttpGet
 local function sendToFlaskApi(playerName, level)
     local machineId = game:GetService("RbxAnalyticsService"):GetClientId() -- Fetch unique machine ID
-    local endpoint = "http://127.0.0.1:5000/receive_data" -- Replace with your Flask API endpoint
-    local data = {
-        playerName = playerName,
-        currentLevel = level,
-        machineId = machineId
-    }
+    local endpoint = "http://127.0.0.1:5000/receive_data?playerName=" .. playerName .. "&currentLevel=" .. level .. "&machineId=" .. machineId
 
     local success, response = pcall(function()
-        return HttpService:RequestAsync({
-            Url = endpoint,
-            Method = "POST",
-            Headers = { ["Content-Type"] = "application/json" },
-            Body = HttpService:JSONEncode(data)
-        })
+        return game:HttpGet(endpoint)
     end)
 
     if success then
-        print("[Info] Data sent to Flask API: " .. response.Body)
+        print("[Info] Data sent to Flask API: " .. response)
     else
         print("[Error] Failed to send data to Flask API: " .. tostring(response))
     end
