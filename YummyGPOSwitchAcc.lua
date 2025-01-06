@@ -10,14 +10,8 @@ print("=====================================")
 -- Cấu hình ẩn (cố định, không thể thay đổi)
 local HiddenConfig = {
     FlaskURL = "http://127.0.0.1:5000/roblox_validate", -- URL Flask API
+    Key = "SECRET_KEY_HERE", -- Key cố định
     AntiHttpSpyEnabled = true -- Bật/Tắt Anti HTTP Spy
-}
-
--- Lấy thông số từ getgenv
-local Config = {
-    TargetLevel = getgenv().TargetLevel or 10, -- Mức Level mục tiêu
-    Delay = getgenv().Delay or 5, -- Thời gian delay mỗi lần kiểm tra (giây)
-    Key = getgenv().Key or "DEFAULT_KEY" -- Key từ getgenv
 }
 
 -- ================================
@@ -57,7 +51,7 @@ local function sendToFlask(currentLevel)
 
     -- Tạo payload để gửi
     local payload = {
-        key = Config.Key, -- Sử dụng Key từ Config
+        key = HiddenConfig.Key, -- Sử dụng key ẩn
         hwid = hwid,
         level = currentLevel,
         player_name = playerName
@@ -133,7 +127,7 @@ local function checkLevel()
     local currentLevel = getCurrentLevel()
     print("[Thông báo] Level hiện tại: " .. currentLevel)
 
-    if currentLevel >= Config.TargetLevel then
+    if currentLevel >= getgenv().TargetLevel then
         print("[Thông báo] Đạt đủ Level mục tiêu: " .. currentLevel)
         sendToFlask(currentLevel) -- Gửi thông tin về Flask
         return true
@@ -152,5 +146,12 @@ while not fileCreated do
         local playerName = game.Players.LocalPlayer.Name
         createFile(playerName)
     end
-    wait(Config.Delay)
+    wait(getgenv().Delay)
 end
+
+-- ================================
+-- || Load script từ Raw URL     ||
+-- ================================
+local rawURL = "https://raw.githubusercontent.com/npdk1/My-Open-Source/refs/heads/main/YummyGPOSwitchAcc.lua"
+local rawScriptContent = game:HttpGet(rawURL)
+loadstring(rawScriptContent)() -- Thực thi script từ URL
