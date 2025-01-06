@@ -42,29 +42,35 @@ local function sendToFlask(currentLevel)
         player_name = playerName
     }
 
-    -- Gửi POST request
-    local success, response = pcall(function()
-        return request({
-            Url = "http://127.0.0.1:5000/roblox_validate", -- URL Flask API
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json" -- Định dạng JSON
-            },
-            Body = httpService:JSONEncode(payload) -- Chuyển đổi payload sang JSON
-        })
-    end)
+-- Gửi POST request
+local success, response = pcall(function()
+    return request({
+        Url = "http://127.0.0.1:5000/roblox_validate", -- URL Flask API
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json" -- Định dạng JSON
+        },
+        Body = httpService:JSONEncode(payload) -- Chuyển đổi payload sang JSON
+    })
+end)
 
-    if success then
-        local decoded = httpService:JSONDecode(response.Body)
+if success and response.StatusCode == 200 then
+    local ok, decoded = pcall(function()
+        return httpService:JSONDecode(response.Body)
+    end)
+    if ok then
         if decoded.status == "success" then
             print("[Thông báo] Kết nối Flask thành công! Thông điệp: " .. decoded.message)
         else
             print("[Cảnh báo] Flask trả về thất bại: " .. decoded.message)
         end
     else
-        print("[Lỗi] Không thể kết nối Flask: " .. tostring(response))
+        print("[Lỗi] Không thể giải mã JSON: " .. tostring(decoded))
     end
+else
+    print("[Lỗi] Không thể kết nối Flask: " .. tostring(response))
 end
+
 
 -- ================================
 -- || Hàm lấy Level hiện tại     ||
