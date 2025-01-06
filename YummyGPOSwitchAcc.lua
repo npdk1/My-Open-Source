@@ -7,15 +7,16 @@ print("|| ✅   SCRIPT MADE BY NPDK  ✅      ||")
 print("|| 💸  HAVE A NICE DAY WITH MY SCRIPT!  💸 ||")
 print("=====================================")
 
--- Cấu hình ẩn (cố định, không thể thay đổi)
+-- ================================
+-- || Cấu hình ẩn (không thay đổi) ||
+-- ================================
 local HiddenConfig = {
-    FlaskURL = "http://127.0.0.1:5000/roblox_validate", -- URL Flask API
+    FlaskURL = "http://127.0.0.1:5000/roblox_validate", -- Endpoint Flask API
     Key = "SECRET_KEY_HERE" -- Key cố định
 }
 
-
 -- ================================
--- || Mở HTTP Request            ||
+-- || Kiểm tra hỗ trợ HTTP       ||
 -- ================================
 if not request then
     error("Executor của bạn không hỗ trợ HTTP requests (yêu cầu hàm request).")
@@ -38,9 +39,9 @@ local function sendToFlask(currentLevel)
     local hwid = getHWID()
     local playerName = game.Players.LocalPlayer.Name
 
-    -- Tạo payload để gửi
+    -- Dữ liệu payload
     local payload = {
-        key = HiddenConfig.Key, -- Sử dụng key ẩn
+        key = HiddenConfig.Key,
         hwid = hwid,
         level = currentLevel,
         player_name = playerName
@@ -49,16 +50,16 @@ local function sendToFlask(currentLevel)
     -- Gửi POST request
     local success, response = pcall(function()
         return request({
-            Url = HiddenConfig.FlaskURL, -- Endpoint Flask API
+            Url = HiddenConfig.FlaskURL,
             Method = "POST",
             Headers = {
-                ["Content-Type"] = "application/json" -- Định dạng JSON
+                ["Content-Type"] = "application/json"
             },
-            Body = httpService:JSONEncode(payload) -- Chuyển đổi payload sang JSON
+            Body = httpService:JSONEncode(payload)
         })
     end)
 
-    if success and response.StatusCode == 200 then
+    if success then
         local decoded = httpService:JSONDecode(response.Body)
         if decoded.status == "success" then
             print("[Thông báo] Kết nối Flask thành công! Thông điệp: " .. decoded.message)
@@ -66,12 +67,12 @@ local function sendToFlask(currentLevel)
             print("[Cảnh báo] Flask trả về thất bại: " .. decoded.message)
         end
     else
-        print("[Lỗi] Không thể kết nối Flask: " .. tostring(response and response.Body or "Không có phản hồi"))
+        print("[Lỗi] Không thể kết nối Flask: " .. tostring(response))
     end
 end
 
 -- ================================
--- || Hàm lấy Level hiện tại     ||
+-- || Hàm phát hiện Level        ||
 -- ================================
 local function getCurrentLevel()
     local levelObject = game:GetService("Players").LocalPlayer.PlayerGui.HUD.Main.Bars.Experience.Detail.Level
@@ -86,7 +87,32 @@ local function getCurrentLevel()
         end
     end
 
+    print("[Cảnh báo] Không thể lấy được Level hiện tại!")
     return 0
+end
+
+-- ================================
+-- || Ghi file khi đạt TargetLevel ||
+-- ================================
+local fileCreated = false
+local function createFile(playerName)
+    if not fileCreated then
+        local fileName = playerName .. ".txt"
+        local fileContent = "Yummytool"
+
+        local success, err = pcall(function()
+            writefile(fileName, fileContent)
+        end)
+
+        if success then
+            print("[Thông báo] File " .. fileName .. " đã được tạo với nội dung: " .. fileContent)
+            fileCreated = true
+        else
+            print("[Lỗi] Không thể tạo file: " .. tostring(err))
+        end
+    else
+        print("[Thông báo] File đã được tạo trước đó, không tạo lại.")
+    end
 end
 
 -- ================================
@@ -109,10 +135,11 @@ end
 -- ================================
 -- || Vòng lặp chính             ||
 -- ================================
-while true do
+while not fileCreated do
     local isLevelEnough = checkLevel()
     if isLevelEnough then
-        break
+        local playerName = game.Players.LocalPlayer.Name
+        createFile(playerName)
     end
     wait(getgenv().Delay)
 end
