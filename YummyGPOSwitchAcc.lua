@@ -12,30 +12,25 @@ local Players = game:GetService("Players")
 local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 local fileCreated = false
 
--- Server IP configuration (set to the Flask server's public IP address)
-local flaskServerIP = getgenv().FlaskServerIP or "171.226.231.220" -- Đặt thành địa chỉ IP công cộng của bạn
-local flaskServerPort = "5000"
-local apiKey = getgenv().ApiKey or "your_secure_api_key" -- Đặt API key an toàn
+-- Cấu hình máy chủ Flask (sử dụng IP công cộng)
+local flaskServerURL = "http://171.226.231.220:5000/receive_data"  -- Địa chỉ IP công cộng và cổng Flask
+local apiKey = "your_secure_api_key"  -- Thay đổi thành API key an toàn của bạn
 
--- Target level và Delay có thể được thiết lập từ getgenv()
-local targetLevel = getgenv().TargetLevel or 10 -- Giá trị mặc định là 10 nếu không đặt
-local delayTime = getgenv().Delay or 5 -- Giá trị mặc định là 5 giây nếu không đặt
+-- Thiết lập Level mục tiêu và Delay
+local targetLevel = 10  -- Level mục tiêu
+local delayTime = 5  -- Thời gian delay giữa các lần kiểm tra (giây)
 
--- Function to fetch current level from the game
+-- Hàm lấy Level hiện tại của người chơi
 local function getCurrentLevel()
     local player = Players.LocalPlayer
     if not player then
-        print("[Error] Không tìm thấy LocalPlayer!")
+        warn("[Error] Không tìm thấy LocalPlayer!")
         return 0
     end
 
-    local levelObject = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("HUD") and 
-                        player.PlayerGui.HUD:FindFirstChild("Main") and 
-                        player.PlayerGui.HUD.Main:FindFirstChild("Bars") and 
-                        player.PlayerGui.HUD.Main.Bars:FindFirstChild("Experience") and 
-                        player.PlayerGui.HUD.Main.Bars.Experience:FindFirstChild("Detail") and 
-                        player.PlayerGui.HUD.Main.Bars.Experience.Detail:FindFirstChild("Level")
-
+    -- Điều chỉnh đường dẫn đến Level object tùy thuộc vào GUI của bạn
+    local levelObject = player:FindFirstChild("PlayerGui", true):FindFirstChild("HUD/Main/Bars/Experience/Detail/Level")
+    
     if levelObject then
         if levelObject:IsA("TextLabel") or levelObject:IsA("TextBox") then
             local text = levelObject.Text
@@ -43,22 +38,22 @@ local function getCurrentLevel()
             if currentLevel then
                 return currentLevel
             else
-                print("[Error] Không thể trích xuất giá trị Level từ text: " .. text)
+                warn("[Error] Không thể trích xuất giá trị Level từ text: " .. text)
                 return 0
             end
         elseif levelObject:IsA("NumberValue") or levelObject:IsA("IntValue") then
             return levelObject.Value
         else
-            print("[Error] Level object không phải là kiểu hợp lệ!")
+            warn("[Error] Level object không phải là kiểu hợp lệ!")
             return 0
         end
     else
-        print("[Error] Không tìm thấy Level object!")
+        warn("[Error] Không tìm thấy Level object!")
         return 0
     end
 end
 
--- Function to create a file
+-- Hàm tạo file
 local function createFile(playerName)
     local fileName = playerName .. ".txt"
     local fileContent = "Yummytool"
@@ -70,33 +65,34 @@ local function createFile(playerName)
     if success then
         print("[Info] File " .. fileName .. " đã được tạo với nội dung: " .. fileContent)
     else
-        print("[Error] Tạo file thất bại: " .. tostring(err))
+        warn("[Error] Tạo file thất bại: " .. tostring(err))
     end
 end
 
--- Function to send HTTP request to Flask API using HttpService:GetAsync
+-- Hàm gửi dữ liệu tới Flask API sử dụng POST
 local function sendToFlaskApi(playerName, level)
-    local machineId = RbxAnalyticsService:GetClientId() -- Lấy ID máy duy nhất
-    local endpoint = "http://" .. flaskServerIP .. ":" .. flaskServerPort .. "/receive_data"
-    local query = "?playerName=" .. HttpService:UrlEncode(playerName) .. 
-                  "&currentLevel=" .. tostring(level) .. 
-                  "&machineId=" .. HttpService:UrlEncode(machineId) ..
-                  "&apiKey=" .. HttpService:UrlEncode(apiKey) -- Thêm API key vào query
+    local machineId = RbxAnalyticsService:GetClientId()
+    local data = {
+        playerName = playerName,
+        currentLevel = level,
+        machineId = machineId,
+        apiKey = apiKey
+    }
 
-    local url = endpoint .. query
+    local jsonData = HttpService:JSONEncode(data)
 
     local success, response = pcall(function()
-        return HttpService:GetAsync(url)
+        return HttpService:PostAsync(flaskServerURL, jsonData, Enum.HttpContentType.ApplicationJson)
     end)
 
     if success then
         print("[Info] Dữ liệu đã được gửi tới Flask API: " .. response)
     else
-        print("[Error] Gửi dữ liệu tới Flask API thất bại: " .. tostring(response))
+        warn("[Error] Gửi dữ liệu tới Flask API thất bại: " .. tostring(response))
     end
 end
 
--- Function to check level and send data to Flask API
+-- Hàm kiểm tra Level và gửi dữ liệu tới Flask API
 local function checkLevel()
     local currentLevel = getCurrentLevel()
     print("[Info] Current Level: " .. currentLevel)
@@ -112,7 +108,7 @@ local function checkLevel()
     end
 end
 
--- Continuously check level until file is created
+-- Vòng lặp kiểm tra Level liên tục
 while not fileCreated do
     checkLevel()
     wait(delayTime)
