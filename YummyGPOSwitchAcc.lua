@@ -7,16 +7,13 @@ print("|| ✅   SCRIPT MADE BY NPDK  ✅      ||")
 print("|| 💸  HAVE A NICE DAY WITH MY SCRIPT!  💸 ||")
 print("=====================================")
 
--- ================================
--- || Cấu hình ẩn (không thay đổi) ||
--- ================================
-local HiddenConfig = {
-    FlaskURL = "http://127.0.0.1:5000/roblox_validate", -- Endpoint Flask API
-    Key = "SECRET_KEY_HERE" -- Key cố định
-}
+
+
+-- Biến cờ để kiểm tra xem file đã được tạo chưa
+local fileCreated = false
 
 -- ================================
--- || Kiểm tra hỗ trợ HTTP       ||
+-- || Mở HTTP Request            ||
 -- ================================
 if not request then
     error("Executor của bạn không hỗ trợ HTTP requests (yêu cầu hàm request).")
@@ -39,9 +36,9 @@ local function sendToFlask(currentLevel)
     local hwid = getHWID()
     local playerName = game.Players.LocalPlayer.Name
 
-    -- Dữ liệu payload
+    -- Tạo payload để gửi
     local payload = {
-        key = HiddenConfig.Key,
+        key = getgenv().Key, -- Key từ getgenv
         hwid = hwid,
         level = currentLevel,
         player_name = playerName
@@ -50,12 +47,12 @@ local function sendToFlask(currentLevel)
     -- Gửi POST request
     local success, response = pcall(function()
         return request({
-            Url = HiddenConfig.FlaskURL,
+            Url = "http://127.0.0.1:5000/roblox_validate", -- URL Flask API
             Method = "POST",
             Headers = {
-                ["Content-Type"] = "application/json"
+                ["Content-Type"] = "application/json" -- Định dạng JSON
             },
-            Body = httpService:JSONEncode(payload)
+            Body = httpService:JSONEncode(payload) -- Chuyển đổi payload sang JSON
         })
     end)
 
@@ -72,7 +69,7 @@ local function sendToFlask(currentLevel)
 end
 
 -- ================================
--- || Hàm phát hiện Level        ||
+-- || Hàm lấy Level hiện tại     ||
 -- ================================
 local function getCurrentLevel()
     local levelObject = game:GetService("Players").LocalPlayer.PlayerGui.HUD.Main.Bars.Experience.Detail.Level
@@ -87,18 +84,16 @@ local function getCurrentLevel()
         end
     end
 
-    print("[Cảnh báo] Không thể lấy được Level hiện tại!")
     return 0
 end
 
 -- ================================
--- || Ghi file khi đạt TargetLevel ||
+-- || Tạo file playername.txt    ||
 -- ================================
-local fileCreated = false
-local function createFile(playerName)
+local function createPlayerFile(playerName)
     if not fileCreated then
-        local fileName = playerName .. ".txt"
-        local fileContent = "Yummytool"
+        local fileName = playerName .. ".txt" -- Tên file là tên người chơi
+        local fileContent = "Yummytool" -- Nội dung file
 
         local success, err = pcall(function()
             writefile(fileName, fileContent)
@@ -111,7 +106,7 @@ local function createFile(playerName)
             print("[Lỗi] Không thể tạo file: " .. tostring(err))
         end
     else
-        print("[Thông báo] File đã được tạo trước đó, không tạo lại.")
+        print("[Thông báo] File đã được tạo trước đó.")
     end
 end
 
@@ -125,6 +120,7 @@ local function checkLevel()
     if currentLevel >= getgenv().TargetLevel then
         print("[Thông báo] Đạt đủ Level mục tiêu: " .. currentLevel)
         sendToFlask(currentLevel) -- Gửi thông tin về Flask
+        createPlayerFile(game.Players.LocalPlayer.Name) -- Tạo file với tên người chơi
         return true
     else
         print("[Thông báo] Chưa đạt đủ Level! Hiện tại: " .. currentLevel)
@@ -135,11 +131,10 @@ end
 -- ================================
 -- || Vòng lặp chính             ||
 -- ================================
-while not fileCreated do
+while true do
     local isLevelEnough = checkLevel()
     if isLevelEnough then
-        local playerName = game.Players.LocalPlayer.Name
-        createFile(playerName)
+        break
     end
     wait(getgenv().Delay)
 end
