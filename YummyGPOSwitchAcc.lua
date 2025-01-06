@@ -7,8 +7,6 @@ print("|| ✅   SCRIPT MADE BY NPDK  ✅      ||")
 print("|| 💸  HAVE A NICE DAY WITH MY SCRIPT!  💸 ||")
 print("=====================================")
 
-
-
 -- Biến cờ để kiểm tra xem file đã được tạo chưa
 local fileCreated = false
 
