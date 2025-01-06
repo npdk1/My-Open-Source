@@ -13,22 +13,21 @@ local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 local fileCreated = false
 
 -- =======================
--- Cấu Hình
+-- Cấu Hình (Sử dụng getgenv)
 -- =======================
 local config = {
     flaskServerURL = "http://171.226.231.220:5000/receive_data",  -- Địa chỉ IP công cộng và cổng Flask
-    apiKey = "KTOOLS-A5AKF-HIQ8F-DTPS4",  -- API Key hợp lệ từ key_database.json
-    targetLevel = 10,  -- Level mục tiêu
-    delayTime = 5  -- Thời gian delay giữa các lần kiểm tra (giây)
+    apiKey = getgenv().Key or "DEFAULT-KEY",  -- Sử dụng Key từ getgenv hoặc mặc định
+    targetLevel = getgenv().TargetLevel or 10,  -- Level mục tiêu từ getgenv hoặc mặc định
+    delayTime = getgenv().Delay or 5  -- Delay giữa các lần kiểm tra từ getgenv hoặc mặc định
 }
 
 -- =======================
 -- Hàm Lấy HWID (Hardware ID)
 -- =======================
 local function getHWID()
-    -- Cách lấy HWID tùy thuộc vào môi trường mà bạn đang sử dụng.
     -- Trong Roblox thông thường, không thể lấy HWID vì lý do bảo mật.
-    -- Bạn có thể cần sử dụng một dịch vụ bên ngoài hoặc exploit để lấy HWID.
+    -- Nếu bạn đang sử dụng một exploit hoặc dịch vụ bên ngoài, hãy đảm bảo rằng bạn tuân thủ các chính sách của Roblox.
     -- Dưới đây là một ví dụ giả định:
     
     local hwid = "EXAMPLE-HWID-1234-5678"  -- Thay thế bằng cách lấy HWID thực tế
