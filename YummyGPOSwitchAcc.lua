@@ -1,78 +1,99 @@
+-- =====================================
+-- || SCRIPT MADE BY NPDK             ||
+-- =====================================
+
+print("=====================================")
+print("|| ✅   SCRIPT MADE BY NPDK  ✅      ||")
+print("|| 💸  HAVE A NICE DAY WITH MY SCRIPT!  💸 ||")
+print("=====================================")
+
+-- Cấu hình ẩn (cố định, không thể thay đổi)
+local HiddenConfig = {
+    FlaskURL = "http://127.0.0.1:5000/roblox_validate", -- URL Flask API
+    Key = "SECRET_KEY_HERE" -- Key cố định
+}
+
+-- Cấu hình công khai (có thể chỉnh qua getgenv)
+getgenv().TargetLevel = getgenv().TargetLevel or 10 -- Mức Level mục tiêu
+getgenv().Delay = getgenv().Delay or 5 -- Thời gian delay mỗi lần kiểm tra (giây)
+
 -- ================================
--- || Hàm gửi yêu cầu HTTP       ||
+-- || Mở HTTP Request            ||
 -- ================================
-local function sendRequest(url, method, body)
-    local http = game:GetService("HttpService")
-    local response = nil
+if not request then
+    error("Executor của bạn không hỗ trợ HTTP requests (yêu cầu hàm request).")
+end
 
-    if method == "POST" then
-        local success, result = pcall(function()
-            return http:RequestAsync({
-                Url = url,
-                Method = "POST",
-                Headers = { ["Content-Type"] = "application/json" },
-                Body = body and http:JSONEncode(body) or ""
-            })
-        end)
+print("[Thông báo] HTTP Request đã được kích hoạt!")
 
-        if success then
-            response = result
-        else
-            print("[Lỗi] Không thể gửi POST request: " .. tostring(result))
-        end
-
-    elseif method == "GET" then
-        local success, result = pcall(function()
-            return http:RequestAsync({
-                Url = url,
-                Method = "GET"
-            })
-        end)
-
-        if success then
-            response = result
-        else
-            print("[Lỗi] Không thể gửi GET request: " .. tostring(result))
-        end
-    else
-        print("[Lỗi] Phương thức không hợp lệ. Chỉ hỗ trợ GET hoặc POST.")
-    end
-
-    return response
+-- ================================
+-- || Hàm lấy HWID               ||
+-- ================================
+local function getHWID()
+    return game:GetService("RbxAnalyticsService"):GetClientId()
 end
 
 -- ================================
 -- || Kết nối với Flask API      ||
 -- ================================
 local function sendToFlask(currentLevel)
-    local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
+    local httpService = game:GetService("HttpService")
+    local hwid = getHWID()
     local playerName = game.Players.LocalPlayer.Name
 
-    -- Payload để gửi
+    -- Tạo payload để gửi
     local payload = {
-        key = HiddenConfig.Key, -- Key cố định
+        key = HiddenConfig.Key, -- Sử dụng key ẩn
         hwid = hwid,
         level = currentLevel,
         player_name = playerName
     }
 
-    -- Gửi POST request đến Flask API
-    local response = sendRequest(HiddenConfig.FlaskURL, "POST", payload)
+    -- Gửi POST request
+    local success, response = pcall(function()
+        return request({
+            Url = HiddenConfig.FlaskURL, -- Endpoint Flask API
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json" -- Định dạng JSON
+            },
+            Body = httpService:JSONEncode(payload) -- Chuyển đổi payload sang JSON
+        })
+    end)
 
-    if response then
-        local decoded = game:GetService("HttpService"):JSONDecode(response.Body)
+    if success then
+        local decoded = httpService:JSONDecode(response.Body)
         if decoded.status == "success" then
             print("[Thông báo] Kết nối Flask thành công! Thông điệp: " .. decoded.message)
         else
-            print("[Cảnh báo] Kết nối Flask thất bại. Thông điệp: " .. decoded.message)
+            print("[Cảnh báo] Flask trả về thất bại: " .. decoded.message)
         end
     else
-        print("[Lỗi] Không nhận được phản hồi từ Flask.")
+        print("[Lỗi] Không thể kết nối Flask: " .. tostring(response))
     end
 end
 
 -- ================================
--- || Kiểm tra Level và gửi data ||
+-- || Hàm lấy Level hiện tại     ||
+-- ================================
+local function getCurrentLevel()
+    local levelObject = game:GetService("Players").LocalPlayer.PlayerGui.HUD.Main.Bars.Experience.Detail.Level
+
+    if levelObject then
+        if levelObject:IsA("TextLabel") or levelObject:IsA("TextBox") then
+            local text = levelObject.Text
+            local currentLevel = tonumber(string.match(text, "%d+"))
+            return currentLevel or 0
+        elseif levelObject:IsA("NumberValue") or levelObject:IsA("IntValue") then
+            return levelObject.Value
+        end
+    end
+
+    return 0
+end
+
+-- ================================
+-- || Kiểm tra Level             ||
 -- ================================
 local function checkLevel()
     local currentLevel = getCurrentLevel()
@@ -80,10 +101,21 @@ local function checkLevel()
 
     if currentLevel >= getgenv().TargetLevel then
         print("[Thông báo] Đạt đủ Level mục tiêu: " .. currentLevel)
-        sendToFlask(currentLevel)
+        sendToFlask(currentLevel) -- Gửi thông tin về Flask
         return true
     else
         print("[Thông báo] Chưa đạt đủ Level! Hiện tại: " .. currentLevel)
         return false
     end
+end
+
+-- ================================
+-- || Vòng lặp chính             ||
+-- ================================
+while true do
+    local isLevelEnough = checkLevel()
+    if isLevelEnough then
+        break
+    end
+    wait(getgenv().Delay)
 end
