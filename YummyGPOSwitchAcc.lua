@@ -16,7 +16,7 @@ local fileCreated = false
 -- Cấu Hình (Sử dụng getgenv)
 -- =======================
 local config = {
-    flaskServerURL = "http://YOUR_PUBLIC_IP:5000/receive_data",  -- Thay YOUR_PUBLIC_IP bằng địa chỉ IP công cộng của bạn hoặc hostname DDNS
+    flaskServerURL = "http://192.168.1.6:5000/receive_data",  -- Địa chỉ IP nội bộ của bạn
     apiKey = getgenv().Key or "DEFAULT-KEY",  -- Sử dụng Key từ getgenv hoặc mặc định
     targetLevel = getgenv().TargetLevel or 10,  -- Level mục tiêu từ getgenv hoặc mặc định
     delayTime = getgenv().Delay or 5  -- Delay giữa các lần kiểm tra từ getgenv hoặc mặc định
