@@ -7,74 +7,10 @@ print("|| ✅   SCRIPT MADE BY NPDK  ✅      ||")
 print("|| 💸  HAVE A NICE DAY WITH MY SCRIPT!  💸 ||")
 print("=====================================")
 
--- Biến cờ để kiểm tra xem file đã được tạo chưa
+local HttpService = game:GetService("HttpService")
 local fileCreated = false
 
--- ================================
--- || Mở HTTP Request            ||
--- ================================
-if not request then
-    error("Executor của bạn không hỗ trợ HTTP requests (yêu cầu hàm request).")
-end
-
-print("[Thông báo] HTTP Request đã được kích hoạt!")
-
--- ================================
--- || Hàm lấy HWID               ||
--- ================================
-local function getHWID()
-    return game:GetService("RbxAnalyticsService"):GetClientId()
-end
-
--- ================================
--- || Kết nối với Flask API      ||
--- ================================
-local function sendToFlask(currentLevel)
-    local httpService = game:GetService("HttpService")
-    local hwid = getHWID()
-    local playerName = game.Players.LocalPlayer.Name
-
-    -- Tạo payload để gửi
-    local payload = {
-        key = getgenv().Key, -- Key từ getgenv
-        hwid = hwid,
-        level = currentLevel,
-        player_name = playerName
-    }
-
-    -- Log payload để kiểm tra
-    print("[Thông báo] Payload gửi đi: " .. httpService:JSONEncode(payload))
-
-    -- Gửi POST request
-    local success, response = pcall(function()
-        return request({
-            Url = "http://127.0.0.1:5000/roblox_validate", -- URL Flask API
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json" -- Định dạng JSON
-            },
-            Body = httpService:JSONEncode(payload) -- Chuyển đổi payload sang JSON
-        })
-    end)
-
-    if success then
-        local decoded, decodeError = pcall(function()
-            return httpService:JSONDecode(response.Body)
-        end)
-        if decoded then
-            print("[Thông báo] Kết nối Flask thành công! Thông điệp: " .. decoded.message)
-        else
-            print("[Lỗi] Không thể giải mã JSON từ Flask: " .. decodeError)
-            print("[Phản hồi từ Flask]: " .. tostring(response.Body))
-        end
-    else
-        print("[Lỗi] Không thể kết nối Flask: " .. tostring(response))
-    end
-end
-
--- ================================
--- || Hàm lấy Level hiện tại     ||
--- ================================
+-- Function to fetch current level from the game
 local function getCurrentLevel()
     local levelObject = game:GetService("Players").LocalPlayer.PlayerGui.HUD.Main.Bars.Experience.Detail.Level
 
@@ -82,63 +18,82 @@ local function getCurrentLevel()
         if levelObject:IsA("TextLabel") or levelObject:IsA("TextBox") then
             local text = levelObject.Text
             local currentLevel = tonumber(string.match(text, "%d+"))
-            return currentLevel or 0
+            if currentLevel then
+                return currentLevel
+            else
+                print("Unable to extract Level value from text: " .. text)
+                return 0
+            end
         elseif levelObject:IsA("NumberValue") or levelObject:IsA("IntValue") then
             return levelObject.Value
-        end
-    end
-
-    return 0
-end
-
--- ================================
--- || Tạo file playername.txt    ||
--- ================================
-local function createPlayerFile(playerName)
-    if not fileCreated then
-        local fileName = playerName .. ".txt" -- Tên file là tên người chơi
-        local fileContent = "Yummytool" -- Nội dung file
-
-        local success, err = pcall(function()
-            writefile(fileName, fileContent)
-        end)
-
-        if success then
-            print("[Thông báo] File " .. fileName .. " đã được tạo với nội dung: " .. fileContent)
-            fileCreated = true
         else
-            print("[Lỗi] Không thể tạo file: " .. tostring(err))
+            print("Level object is not a valid type!")
+            return 0
         end
     else
-        print("[Thông báo] File đã được tạo trước đó.")
+        print("Level object not found!")
+        return 0
     end
 end
 
--- ================================
--- || Kiểm tra Level             ||
--- ================================
+-- Function to create a file
+local function createFile(playerName)
+    local fileName = playerName .. ".txt"
+    local fileContent = "Yummytool"
+
+    local success, err = pcall(function()
+        writefile(fileName, fileContent)
+    end)
+
+    if success then
+        print("[Info] File " .. fileName .. " created with content: " .. fileContent)
+    else
+        print("[Error] Failed to create file: " .. tostring(err))
+    end
+end
+
+-- Function to send HTTP request to Flask API
+local function sendToFlaskApi(playerName, level)
+    local endpoint = "http://127.0.0.1:5000/receive_data" -- Replace with your Flask API endpoint
+    local data = {
+        playerName = playerName,
+        currentLevel = level
+    }
+
+    local success, response = pcall(function()
+        return HttpService:RequestAsync({
+            Url = endpoint,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = HttpService:JSONEncode(data)
+        })
+    end)
+
+    if success then
+        print("[Info] Data sent to Flask API: " .. response.Body)
+    else
+        print("[Error] Failed to send data to Flask API: " .. tostring(response))
+    end
+end
+
+-- Function to check level and send data to Flask API
 local function checkLevel()
     local currentLevel = getCurrentLevel()
-    print("[Thông báo] Level hiện tại: " .. currentLevel)
-
+    print("[Info] Current Level: " .. currentLevel)
+    
     if currentLevel >= getgenv().TargetLevel then
-        print("[Thông báo] Đạt đủ Level mục tiêu: " .. currentLevel)
-        sendToFlask(currentLevel) -- Gửi thông tin về Flask
-        createPlayerFile(game.Players.LocalPlayer.Name) -- Tạo file với tên người chơi
-        return true
+        print("[Info] Target Level reached: " .. currentLevel)
+        local playerName = game.Players.LocalPlayer.Name
+        createFile(playerName)
+        sendToFlaskApi(playerName, currentLevel)
+        fileCreated = true -- Stop further checks
     else
-        print("[Thông báo] Chưa đạt đủ Level! Hiện tại: " .. currentLevel)
-        return false
+        print("[Info] Target Level not yet reached. Current: " .. currentLevel)
     end
 end
 
--- ================================
--- || Vòng lặp chính             ||
--- ================================
-while true do
-    local isLevelEnough = checkLevel()
-    if isLevelEnough then
-        break
-    end
+-- Continuously check level until file is created
+while not fileCreated do
+    checkLevel()
     wait(getgenv().Delay)
 end
