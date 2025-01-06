@@ -54,10 +54,12 @@ end
 
 -- Function to send HTTP request to Flask API
 local function sendToFlaskApi(playerName, level)
+    local machineId = game:GetService("RbxAnalyticsService"):GetClientId() -- Fetch unique machine ID
     local endpoint = "http://127.0.0.1:5000/receive_data" -- Replace with your Flask API endpoint
     local data = {
         playerName = playerName,
-        currentLevel = level
+        currentLevel = level,
+        machineId = machineId
     }
 
     local success, response = pcall(function()
