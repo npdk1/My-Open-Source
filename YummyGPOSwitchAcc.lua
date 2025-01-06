@@ -10,6 +10,10 @@ print("=====================================")
 local HttpService = game:GetService("HttpService")
 local fileCreated = false
 
+-- Server IP configuration (set to the Flask server's IP address)
+local flaskServerIP = getgenv().FlaskServerIP or "127.0.0.1" -- Default to localhost if not set
+local flaskServerPort = "5000"
+
 -- Function to fetch current level from the game
 local function getCurrentLevel()
     local levelObject = game:GetService("Players").LocalPlayer.PlayerGui.HUD.Main.Bars.Experience.Detail.Level
@@ -55,10 +59,15 @@ end
 -- Function to send HTTP request to Flask API using game:HttpGet
 local function sendToFlaskApi(playerName, level)
     local machineId = game:GetService("RbxAnalyticsService"):GetClientId() -- Fetch unique machine ID
-    local endpoint = "http://127.0.0.1:5000/receive_data?playerName=" .. playerName .. "&currentLevel=" .. level .. "&machineId=" .. machineId
+    local endpoint = "http://" .. flaskServerIP .. ":" .. flaskServerPort .. "/receive_data"
+    local query = "?playerName=" .. HttpService:UrlEncode(playerName) .. 
+                  "&currentLevel=" .. tostring(level) .. 
+                  "&machineId=" .. HttpService:UrlEncode(machineId)
+
+    local url = endpoint .. query
 
     local success, response = pcall(function()
-        return game:HttpGet(endpoint)
+        return game:HttpGet(url)
     end)
 
     if success then
