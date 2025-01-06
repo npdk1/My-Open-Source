@@ -13,9 +13,6 @@ local HiddenConfig = {
     Key = "SECRET_KEY_HERE" -- Key cố định
 }
 
--- Cấu hình công khai (có thể chỉnh qua getgenv)
-getgenv().TargetLevel = getgenv().TargetLevel or 10 -- Mức Level mục tiêu
-getgenv().Delay = getgenv().Delay or 5 -- Thời gian delay mỗi lần kiểm tra (giây)
 
 -- ================================
 -- || Mở HTTP Request            ||
