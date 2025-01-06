@@ -61,7 +61,7 @@ local function sendToFlask(currentLevel)
         })
     end)
 
-    if success then
+    if success and response.StatusCode == 200 then
         local decoded = httpService:JSONDecode(response.Body)
         if decoded.status == "success" then
             print("[Thông báo] Kết nối Flask thành công! Thông điệp: " .. decoded.message)
@@ -69,7 +69,7 @@ local function sendToFlask(currentLevel)
             print("[Cảnh báo] Flask trả về thất bại: " .. decoded.message)
         end
     else
-        print("[Lỗi] Không thể kết nối Flask: " .. tostring(response))
+        print("[Lỗi] Không thể kết nối Flask: " .. tostring(response and response.Body or "Không có phản hồi"))
     end
 end
 
